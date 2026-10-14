@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+:root {
+  --crimson: #a0142f;
+  --crimson-dark: #5d1024;
+  --ink: #24191b;
+  --cream: #fff5e8;
+  --paper: #fbeddc;
+  --white: #fffaf2;
+  --linen: #ead8c3;
+  --rose: #deb1ad;
+  --taupe: #b99378;
+
+  /* Baseline colors */
+  --bg-primary: var(--cream);
+  --text-primary: var(--ink);
+  --accent: var(--crimson);
+  --accent-dark: var(--crimson-dark);
+  --panel-bg: var(--paper);
+  --card-bg: var(--white);
+  --border-subtle: var(--linen);
+  --border-accent: var(--rose);
+}
+
+@theme {
+  --color-crimson: var(--crimson);
+  --color-crimson-dark: var(--crimson-dark);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-white: var(--white);
+  --color-linen: var(--linen);
+  --color-rose: var(--rose);
+  --color-taupe: var(--taupe);
+
+  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-manrope), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--cream);
+  color: var(--ink);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Accessible focus outlines */
+:focus-visible {
+  outline: 2px solid var(--crimson);
+  outline-offset: 3px;
+}
+
+/* Custom warm scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--linen);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--taupe);
+}
+
+/* Warm clinical card */
+.clinical-card {
+  background-color: var(--white);
+  border: 1px solid var(--linen);
+  box-shadow: 0 4px 20px -4px rgba(36, 25, 27, 0.04);
+}
+
+.clinical-panel {
+  background-color: var(--paper);
+  border: 1px solid var(--linen);
+}
+
+/* Subtle glow for anatomical highlights */
+.anatomical-glow {
+  box-shadow: 0 0 24px 2px rgba(160, 20, 47, 0.22);
+}
+
+/* Subtle pulse for clinical markers */
+@keyframes warm-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+.animate-warm-pulse {
+  animation: warm-pulse 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
