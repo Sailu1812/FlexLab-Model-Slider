@@ -1,29 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import SitePreloader from '@/components/SitePreloader';
 import CanvasData from '@/components/canvas/canvas';
 import ModelSlider from '@/components/ModelSlider';
-import { MODELS, ModelSpec, preloadAllModels } from '@/lib/models';
-import { Activity, Sparkles, Compass } from 'lucide-react';
+import { MODELS, ModelSpec, preloadModel } from '@/lib/models';
+import { Compass } from 'lucide-react';
 
 export default function Home() {
   const [experienceReady, setExperienceReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelSpec>(MODELS[0]);
   const [isSwitchingModel, setIsSwitchingModel] = useState(false);
 
-  // Background preload other models once initial experience is ready
-  useEffect(() => {
-    if (experienceReady) {
-      const timer = setTimeout(() => {
-        preloadAllModels();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [experienceReady]);
-
   const handleSelectModel = useCallback((model: ModelSpec) => {
     if (model.id === selectedModel.id) return;
+    // Preload target model upon click
+    preloadModel(model.path);
     setIsSwitchingModel(true);
     setSelectedModel(model);
   }, [selectedModel.id]);
@@ -77,7 +69,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Floating Interactive Model Selection Slider */}
+      {/* Right-Side Interactive Model Selection Slider */}
       {experienceReady && (
         <ModelSlider
           models={MODELS}

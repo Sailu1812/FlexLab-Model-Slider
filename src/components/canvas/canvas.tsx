@@ -2,13 +2,31 @@
 
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Environment, Sparkles, OrbitControls } from '@react-three/drei';
+import { Environment, Sparkles, OrbitControls, Html, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import Scene from "./Scene";
+import { Loader2 } from 'lucide-react';
 
 interface CanvasDataProps {
   modelUrl?: string;
   onModelLoaded?: () => void;
+}
+
+function CanvasModelLoader() {
+  const { progress, item } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center p-5 rounded-3xl bg-[#fffaf2]/95 backdrop-blur-xl border border-[#ead8c3] shadow-2xl text-center select-none min-w-[200px]">
+        <div className="w-10 h-10 rounded-full border-2 border-[var(--crimson)] border-t-transparent animate-spin mb-3 flex items-center justify-center">
+          <Loader2 className="w-4 h-4 text-[var(--crimson)] animate-spin" />
+        </div>
+        <span className="text-xs font-serif font-bold text-[var(--ink)]">Loading Anatomical 3D Model</span>
+        <span className="text-[11px] font-mono text-[var(--crimson)] font-semibold mt-1">
+          {Math.max(10, Math.round(progress))}%
+        </span>
+      </div>
+    </Html>
+  );
 }
 
 const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) => {
@@ -16,7 +34,7 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
     <div className="w-full h-full relative">
       {/* Responsive 3D Canvas */}
       <Canvas
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         shadows={{ type: THREE.PCFShadowMap }}
         camera={{ near: 0.1, far: 2000, fov: 25, position: [0, 0, 5] }}
         gl={{
@@ -25,6 +43,7 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
           toneMappingExposure: 1.15,
           outputColorSpace: THREE.SRGBColorSpace,
           alpha: true,
+          powerPreference: "high-performance",
         }}
         className="w-full h-full"
         style={{
@@ -36,18 +55,17 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
         {/* Soft Warm Neutral Background Fog */}
         <fog attach="fog" args={['#fff5e8', 120, 400]} />
 
-        {/* Studio Lighting System - Sculptural Top-Lighting for High Definition */}
+        {/* Studio Lighting System */}
         <ambientLight intensity={0.95} color={"#fffbf5"} />
 
-        {/* Primary Overhead Key Light: Casts crisp anatomical raking light from top-front */}
         <directionalLight
           position={[10, 160, 45]}
           intensity={4.2}
           color={"#ffffff"}
           castShadow
           shadow-bias={-0.0001}
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
           shadow-camera-near={10}
           shadow-camera-far={250}
           shadow-camera-left={-2}
@@ -56,35 +74,30 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
           shadow-camera-bottom={-2}
         />
 
-        {/* Zenith Top Light: Delineates crown, trapezius, acromion, and clavicles */}
         <directionalLight
           position={[0, 180, 5]}
           intensity={2.4}
           color={"#ffffff"}
         />
 
-        {/* Lateral Contour Fill (Left): Soft contrast fill */}
         <directionalLight
           position={[-50, 40, 60]}
           intensity={1.3}
           color={"#deb1ad"}
         />
 
-        {/* Lateral Contour Fill (Right): Gentle symmetry fill */}
         <directionalLight
           position={[50, 40, 60]}
           intensity={1.1}
           color={"#ead8c3"}
         />
 
-        {/* Rim / Silhouette Back Light: Sharp outline separation from the warm background */}
         <directionalLight
           position={[0, 70, -90]}
           intensity={3.0}
           color={"#b99378"}
         />
 
-        {/* Subtle Low Bounce Light: Softens deep undercuts under chin, ribs, and pelvis */}
         <pointLight
           position={[0, -40, 40]}
           intensity={0.8}
@@ -94,9 +107,9 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
 
         {/* Subtle Ambient Particles */}
         <Sparkles
-          count={75}
+          count={50}
           scale={[150, 60, 150]}
-          size={3.5}
+          size={3.0}
           speed={0.25}
           color={"#b99378"}
         />
@@ -113,8 +126,8 @@ const CanvasData = ({ modelUrl = "/body.glb", onModelLoaded }: CanvasDataProps) 
           target={[0, 0, 0]}
         />
 
-        {/* 3D Kinetic Anatomy Models Scene with Suspense boundary */}
-        <Suspense fallback={null}>
+        {/* 3D Kinetic Anatomy Models Scene with informative fallback */}
+        <Suspense fallback={<CanvasModelLoader />}>
           <Scene modelUrl={modelUrl} onLoaded={onModelLoaded} />
         </Suspense>
       </Canvas>

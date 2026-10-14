@@ -14,9 +14,7 @@ export interface ModelSpec {
 
 /**
  * Registry of available 3D anatomical models.
- * To add more models:
- * 1. Put your .glb file into the /public directory (e.g., /public/body5.glb)
- * 2. Add an entry to the MODELS array below.
+ * Lightweight, optimized WebP models for fast Vercel streaming & mobile WebGL performance.
  */
 export const MODELS: ModelSpec[] = [
   {
@@ -25,7 +23,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Full Muscular System',
     badge: 'Model 0',
     path: '/body.glb',
-    fileSize: '45.3 MB',
+    fileSize: '11.8 MB',
     category: 'Neutral Posture',
     description: 'High-definition primary anatomical physique in neutral standing equilibrium.',
     anatomyFocus: 'Full Musculoskeletal Chain',
@@ -36,7 +34,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Segmented Myofascial Profile',
     badge: 'Model 1',
     path: '/body1.glb',
-    fileSize: '44.1 MB',
+    fileSize: '11.9 MB',
     category: 'Dynamic Posture',
     description: 'Specialized postural architecture with isolated kinetic contours and tone.',
     anatomyFocus: 'Axial Alignment & Contours',
@@ -47,7 +45,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Auxiliary Landmark Structure',
     badge: 'Model 2',
     path: '/body2.glb',
-    fileSize: '44.3 MB',
+    fileSize: '15.3 MB',
     category: 'Refined Anatomy',
     description: 'Comprehensive multi-element model with cranial, facial, and core anatomical details.',
     anatomyFocus: 'Cranial & Ocular Landmarks',
@@ -58,7 +56,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Myofascial Articulation',
     badge: 'Model 3',
     path: '/body3.glb',
-    fileSize: '43.0 MB',
+    fileSize: '15.4 MB',
     category: 'Kinetic Chain',
     description: 'Segmented multi-mesh anatomical structure with detailed facial and limb musculature.',
     anatomyFocus: 'Thoracic & Extremity Mechanics',
@@ -69,7 +67,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Deep Fascial Architecture',
     badge: 'Model 4',
     path: '/body4.glb',
-    fileSize: '44.2 MB',
+    fileSize: '15.3 MB',
     category: 'Advanced Biomechanics',
     description: 'High-precision dual-structure anatomical specimen calibrated for biomechanical evaluation.',
     anatomyFocus: 'Pelvic & Scapular Equilibrium',
@@ -77,15 +75,13 @@ export const MODELS: ModelSpec[] = [
 ];
 
 /**
- * Preloads all registered models into browser / Three.js cache.
+ * Preloads a specific model on-demand (e.g., when hovered or queued)
  */
-export const preloadAllModels = () => {
+export const preloadModel = (path: string) => {
   if (typeof window === 'undefined') return;
-  MODELS.forEach((model) => {
-    try {
-      useGLTF.preload(model.path);
-    } catch {
-      // Ignore preload errors
-    }
-  });
+  try {
+    useGLTF.preload(path);
+  } catch {
+    // Ignore preload error
+  }
 };

@@ -4,18 +4,9 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import gsap from 'gsap';
-import { MODELS } from '@/lib/models';
 
-// Preload registered models for instant switching
-if (typeof window !== 'undefined') {
-  MODELS.forEach((m) => {
-    try {
-      useGLTF.preload(m.path);
-    } catch {
-      // Ignored
-    }
-  });
-}
+// Only preload the initial default model to keep network lightweight on Vercel
+useGLTF.preload('/body.glb');
 
 interface SceneProps {
   modelUrl?: string;
@@ -239,46 +230,56 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
     }
   }, [scene, onLoaded]);
 
-  // Load authentic osteological human skeleton.obj once on mount
+  // Defer loading of optional osteological skeleton until after main model renders
   useEffect(() => {
-    const loader = new OBJLoader();
-    loader.load(
-      '/skeleton.obj',
-      (obj) => {
-        const boneMat = new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#f6f0e6"),
-          roughness: 0.55,
-          metalness: 0.08,
-          emissive: new THREE.Color("#2d2218"),
-          emissiveIntensity: 0.22,
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        });
+    let isCancelled = false;
+    const timer = setTimeout(() => {
+      if (isCancelled) return;
+      const loader = new OBJLoader();
+      loader.load(
+        '/skeleton.obj',
+        (obj) => {
+          if (isCancelled) return;
+          const boneMat = new THREE.MeshStandardMaterial({
+            color: new THREE.Color("#f6f0e6"),
+            roughness: 0.55,
+            metalness: 0.08,
+            emissive: new THREE.Color("#2d2218"),
+            emissiveIntensity: 0.22,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          });
 
-        skeletonMatRef.current = boneMat;
+          skeletonMatRef.current = boneMat;
 
-        obj.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.geometry.computeVertexNormals();
-            mesh.material = boneMat;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            mesh.frustumCulled = false;
-          }
-        });
+          obj.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.geometry.computeVertexNormals();
+              mesh.material = boneMat;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              mesh.frustumCulled = false;
+            }
+          });
 
-        obj.visible = false;
-        setSkeletonObj(obj);
-        applySkeletonBlend(currentBlendRef.current);
-      },
-      undefined,
-      (err) => {
-        console.error("Error loading skeleton.obj:", err);
-      }
-    );
+          obj.visible = false;
+          setSkeletonObj(obj);
+          applySkeletonBlend(currentBlendRef.current);
+        },
+        undefined,
+        (err) => {
+          console.warn("Optional skeleton.obj loading note:", err);
+        }
+      );
+    }, 1500);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Keep skeleton blend synced each frame
@@ -350,7 +351,6 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
           z: 0,
           duration: 0.8,
           ease: 'power2.out',
-          overwrite: 'auto',
         });
       }
       if (skeletonGroupRef.current) {
@@ -371,7 +371,6 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
           y: modelRef.current.rotation.y + step,
           duration: 0.8,
           ease: 'power2.out',
-          overwrite: 'auto',
         });
       }
       if (skeletonGroupRef.current) {
@@ -379,7 +378,6 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
           y: skeletonGroupRef.current.rotation.y + step,
           duration: 0.8,
           ease: 'power2.out',
-          overwrite: 'auto',
         });
       }
     };
@@ -422,7 +420,7 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
 
   return (
     <>
-      {/* Centered Normalized Muscular Model (automatically adapts to any GLB model dimensions) */}
+      {/* Centered Normalized Muscular Model */}
       <group ref={modelRef} position={[0, -0.04, 0]}>
         <group position={modelMetrics.position} scale={modelMetrics.scale}>
           <primitive object={scene} />

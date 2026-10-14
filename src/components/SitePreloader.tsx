@@ -3,11 +3,6 @@
 import { useProgress } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 
-const HERO_MEDIA = [
-  "/body.glb",
-  "/skeleton.obj"
-];
-
 const STAGE_LABELS = {
   experience: "Loading 3D Models",
   model: "Loading anatomical 3D model",
@@ -18,24 +13,9 @@ const STAGE_LABELS = {
 
 type LoaderStageKey = keyof typeof STAGE_LABELS;
 
-const preloadAsset = (src: string) =>
-  new Promise<void>((resolve) => {
-    if (src.endsWith(".glb") || src.endsWith(".gltf") || src.endsWith(".obj")) {
-      // 3D Model prefetching via fetch
-      fetch(src)
-        .then(() => resolve())
-        .catch(() => resolve());
-      return;
-    }
-    const image = new Image();
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
-    image.src = src;
-  });
-
 const simplifyItemLabel = (item: string) => {
   if (!item) {
-    return "Loading assets";
+    return "Optimized 3D Anatomy";
   }
 
   const normalized = item.split("?")[0].split("/").at(-1) ?? item;
@@ -55,13 +35,13 @@ const resolveStageKey = (item: string, progress: number): LoaderStageKey => {
   if (lowerItem.includes("bg") || lowerItem.includes("env") || lowerItem.includes("light")) {
     return "environment";
   }
-  if (lowerItem.includes("texture") || lowerItem.includes("normal")) {
+  if (lowerItem.includes("texture") || lowerItem.includes("normal") || lowerItem.includes("webp")) {
     return "textures";
   }
-  if (progress >= 95) return "reveal";
-  if (progress >= 70) return "environment";
-  if (progress >= 40) return "textures";
-  if (progress >= 15) return "model";
+  if (progress >= 90) return "reveal";
+  if (progress >= 60) return "environment";
+  if (progress >= 30) return "textures";
+  if (progress >= 10) return "model";
 
   return "experience";
 };
@@ -72,33 +52,14 @@ interface SitePreloaderProps {
 
 export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
   const { active, item, loaded, progress, total } = useProgress();
-  const [assetsReady, setAssetsReady] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
-  const hasTrackedThreeAssets = total > 0 || loaded > 0 || Boolean(item);
-  const normalizedProgress = Math.max(4, Math.min(100, Math.round(progress)));
+  const normalizedProgress = Math.max(5, Math.min(100, Math.round(progress)));
   const activeStageKey = useMemo(
     () => resolveStageKey(item, normalizedProgress),
     [item, normalizedProgress]
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fontReady =
-      "fonts" in document ? document.fonts.ready.catch(() => undefined) : Promise.resolve();
-
-    Promise.all([fontReady, ...HERO_MEDIA.map(preloadAsset)]).then(() => {
-      if (!cancelled) {
-        setAssetsReady(true);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -121,24 +82,27 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
   }, [isVisible]);
 
   useEffect(() => {
-    // Safety timeout: Ensure experience always reveals within 2.5s even if three asset counters already completed
+    // Safety timer to prevent being stuck forever on network edge case
     const safetyTimer = window.setTimeout(() => {
       setIsReady(true);
-    }, 2500);
+    }, 6000);
 
-    if (!hasTrackedThreeAssets || !assetsReady || active || progress < 100) {
-      return () => window.clearTimeout(safetyTimer);
+    // Natural reveal when Three.js completes loading
+    if (progress >= 100 || (!active && total > 0 && loaded >= total)) {
+      const readyTimer = window.setTimeout(() => {
+        setIsReady(true);
+      }, 350);
+
+      return () => {
+        window.clearTimeout(readyTimer);
+        window.clearTimeout(safetyTimer);
+      };
     }
 
-    const readyTimer = window.setTimeout(() => {
-      setIsReady(true);
-    }, 250);
-
     return () => {
-      window.clearTimeout(readyTimer);
       window.clearTimeout(safetyTimer);
     };
-  }, [active, hasTrackedThreeAssets, assetsReady, progress]);
+  }, [active, loaded, total, progress]);
 
   useEffect(() => {
     onReadyChange(isReady);
@@ -171,8 +135,8 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
       }`}
     >
       <div className="w-full max-w-sm px-6 text-center">
-        <div className="mx-auto mb-5 h-12 w-12 rounded-full border border-[#a0142f]/20 bg-[#fbeddc]">
-          <div className="loader-ring h-full w-full rounded-full border-2 border-[#a0142f] border-t-transparent animate-spin" />
+        <div className="mx-auto mb-5 h-12 w-12 rounded-full border border-[#a0142f]/20 bg-[#fbeddc] flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full border-2 border-[#a0142f] border-t-transparent animate-spin" />
         </div>
 
         <p className="text-[11px] uppercase tracking-[0.34em] text-[#a0142f] font-semibold">3D Kinetic Anatomy</p>
