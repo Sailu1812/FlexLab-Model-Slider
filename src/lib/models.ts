@@ -65,7 +65,7 @@ export const MODELS: ModelSpec[] = [
     subtitle: 'Deep Fascial Architecture',
     badge: 'Model 4',
     path: '/body4.glb',
-    fileSize: '15.3 MB',
+    fileSize: '43.2 MB',
     category: 'Advanced Biomechanics',
     description: 'High-precision dual-structure anatomical specimen calibrated for biomechanical evaluation.',
     anatomyFocus: 'Pelvic & Scapular Equilibrium',
