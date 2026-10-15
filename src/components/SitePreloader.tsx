@@ -4,11 +4,11 @@ import { useProgress } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 
 const STAGE_LABELS = {
-  experience: "Loading 3D Models",
-  model: "Loading anatomical 3D model",
+  experience: "Loading 3D Scene",
+  model: "Streaming 3D Anatomical Specimen",
   environment: "Configuring studio lighting",
   textures: "Loading muscle textures",
-  reveal: "Preparing scene",
+  reveal: "Compiling 3D meshes & shaders",
 } as const;
 
 type LoaderStageKey = keyof typeof STAGE_LABELS;
@@ -26,7 +26,8 @@ const simplifyItemLabel = (item: string) => {
     .trim();
 };
 
-const resolveStageKey = (item: string, progress: number): LoaderStageKey => {
+const resolveStageKey = (item: string, progress: number, isModelReady: boolean): LoaderStageKey => {
+  if (isModelReady) return "reveal";
   const lowerItem = item.toLowerCase();
 
   if (lowerItem.includes("body") || lowerItem.endsWith(".glb") || lowerItem.endsWith(".gltf")) {
@@ -38,27 +39,31 @@ const resolveStageKey = (item: string, progress: number): LoaderStageKey => {
   if (lowerItem.includes("texture") || lowerItem.includes("normal") || lowerItem.includes("webp")) {
     return "textures";
   }
-  if (progress >= 90) return "reveal";
+  if (progress >= 95) return "reveal";
   if (progress >= 60) return "environment";
   if (progress >= 30) return "textures";
-  if (progress >= 10) return "model";
 
-  return "experience";
+  return "model";
 };
 
 interface SitePreloaderProps {
+  isModelReady?: boolean;
   onReadyChange: (ready: boolean) => void;
 }
 
-export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
+export default function SitePreloader({ isModelReady = false, onReadyChange }: SitePreloaderProps) {
   const { active, item, loaded, progress, total } = useProgress();
   const [isReady, setIsReady] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
-  const normalizedProgress = Math.max(5, Math.min(100, Math.round(progress)));
+  // If model is confirmed ready, show 100%, otherwise show Three.js progress
+  const displayProgress = isModelReady 
+    ? 100 
+    : Math.max(8, Math.min(99, Math.round(progress)));
+
   const activeStageKey = useMemo(
-    () => resolveStageKey(item, normalizedProgress),
-    [item, normalizedProgress]
+    () => resolveStageKey(item, displayProgress, isModelReady),
+    [item, displayProgress, isModelReady]
   );
 
   useEffect(() => {
@@ -82,16 +87,16 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
   }, [isVisible]);
 
   useEffect(() => {
-    // Safety timer to prevent being stuck forever on network edge case
+    // Safety fallback: maximum 15s in case of severe network disconnect
     const safetyTimer = window.setTimeout(() => {
       setIsReady(true);
-    }, 6000);
+    }, 15000);
 
-    // Natural reveal when Three.js completes loading
-    if (progress >= 100 || (!active && total > 0 && loaded >= total)) {
+    // Guaranteed reveal ONLY once the 3D model is actually loaded & rendered in Three.js!
+    if (isModelReady) {
       const readyTimer = window.setTimeout(() => {
         setIsReady(true);
-      }, 350);
+      }, 400);
 
       return () => {
         window.clearTimeout(readyTimer);
@@ -102,7 +107,7 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
     return () => {
       window.clearTimeout(safetyTimer);
     };
-  }, [active, loaded, total, progress]);
+  }, [isModelReady]);
 
   useEffect(() => {
     onReadyChange(isReady);
@@ -115,7 +120,7 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
 
     const hideTimer = window.setTimeout(() => {
       setIsVisible(false);
-    }, 450);
+    }, 500);
 
     return () => {
       window.clearTimeout(hideTimer);
@@ -135,24 +140,30 @@ export default function SitePreloader({ onReadyChange }: SitePreloaderProps) {
       }`}
     >
       <div className="w-full max-w-sm px-6 text-center">
-        <div className="mx-auto mb-5 h-12 w-12 rounded-full border border-[#a0142f]/20 bg-[#fbeddc] flex items-center justify-center">
-          <div className="h-8 w-8 rounded-full border-2 border-[#a0142f] border-t-transparent animate-spin" />
+        <div className="mx-auto mb-5 h-12 w-12 rounded-full border border-[#a0142f]/20 bg-[#fbeddc] flex items-center justify-center shadow-xs">
+          <div className="h-7 w-7 rounded-full border-2 border-[#a0142f] border-t-transparent animate-spin" />
         </div>
 
-        <p className="text-[11px] uppercase tracking-[0.34em] text-[#a0142f] font-semibold">3D Kinetic Anatomy</p>
-        <p className="mt-3 text-base text-[#5d1024] font-medium">{STAGE_LABELS[activeStageKey]}</p>
-        <p className="mt-2 text-sm text-[#24191b]/60">{simplifyItemLabel(item)}</p>
+        <p className="text-[11px] uppercase tracking-[0.34em] text-[#a0142f] font-semibold">
+          FlexLab 3D Kinetic Anatomy
+        </p>
+        <p className="mt-3 text-base text-[#5d1024] font-medium font-serif">
+          {STAGE_LABELS[activeStageKey]}
+        </p>
+        <p className="mt-1.5 text-xs text-[#24191b]/60 font-mono">
+          {isModelReady ? "Model loaded into memory" : simplifyItemLabel(item)}
+        </p>
 
         <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[#ead8c3]">
           <div
-            className="h-full rounded-full bg-[#a0142f] transition-[width] duration-300"
-            style={{ width: `${normalizedProgress}%` }}
+            className="h-full rounded-full bg-[#a0142f] transition-[width] duration-300 ease-out"
+            style={{ width: `${displayProgress}%` }}
           />
         </div>
 
         <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.22em] text-[#24191b]/60 font-mono">
-          <span>{normalizedProgress}%</span>
-          <span>{total > 0 ? `${loaded}/${total}` : "Loading..."}</span>
+          <span>{displayProgress}%</span>
+          <span>{isModelReady ? "READY" : (total > 0 ? `${loaded}/${total}` : "LOADING")}</span>
         </div>
       </div>
     </div>

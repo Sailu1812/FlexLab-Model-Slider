@@ -4,30 +4,34 @@ import React, { useState, useCallback } from 'react';
 import SitePreloader from '@/components/SitePreloader';
 import CanvasData from '@/components/canvas/canvas';
 import ModelSlider from '@/components/ModelSlider';
-import { MODELS, ModelSpec, preloadModel } from '@/lib/models';
+import { MODELS, ModelSpec } from '@/lib/models';
 import { Compass } from 'lucide-react';
 
 export default function Home() {
   const [experienceReady, setExperienceReady] = useState(false);
+  const [isInitialModelReady, setIsInitialModelReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelSpec>(MODELS[0]);
   const [isSwitchingModel, setIsSwitchingModel] = useState(false);
 
+  // Strict on-demand selection: only loads the clicked model
   const handleSelectModel = useCallback((model: ModelSpec) => {
     if (model.id === selectedModel.id) return;
-    // Preload target model upon click
-    preloadModel(model.path);
     setIsSwitchingModel(true);
     setSelectedModel(model);
   }, [selectedModel.id]);
 
   const handleModelLoaded = useCallback(() => {
     setIsSwitchingModel(false);
+    setIsInitialModelReady(true);
   }, []);
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[var(--cream)] select-none">
-      {/* 3D Model & Assets Initial Preloader */}
-      <SitePreloader onReadyChange={setExperienceReady} />
+      {/* 3D Model & Assets Preloader - Only reveals once initial 3D model is rendered */}
+      <SitePreloader 
+        isModelReady={isInitialModelReady}
+        onReadyChange={setExperienceReady} 
+      />
 
       {/* Top Floating Brand & Clinical Telemetry Bar */}
       <header
@@ -57,7 +61,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Fullscreen 3D Model Scene */}
+      {/* Fullscreen 3D Model Scene - preloads & renders in background during preloading */}
       <div
         className={`w-full h-full transition-opacity duration-700 ${
           experienceReady ? 'opacity-100' : 'opacity-0'

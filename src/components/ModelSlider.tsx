@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from 'react';
-import { ModelSpec, MODELS, preloadModel } from '@/lib/models';
+import { ModelSpec, MODELS } from '@/lib/models';
 import { 
   RotateCcw, 
   RotateCw, 
@@ -176,7 +176,6 @@ export default function ModelSlider({
                     key={model.id}
                     type="button"
                     onClick={() => onSelectModel(model)}
-                    onMouseEnter={() => preloadModel(model.path)}
                     className={`w-full rounded-xl p-2.5 text-left transition-all duration-200 select-none outline-none relative flex flex-col gap-0.5 ${
                       isSelected
                         ? 'bg-white border-2 border-[var(--crimson)] shadow-sm ring-2 ring-[var(--crimson)]/10'

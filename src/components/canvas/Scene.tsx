@@ -226,7 +226,9 @@ export default function Scene({ modelUrl = "/body.glb", onLoaded }: SceneProps) 
     applySkeletonBlend(currentBlendRef.current);
 
     if (onLoaded) {
-      onLoaded();
+      requestAnimationFrame(() => {
+        onLoaded();
+      });
     }
   }, [scene, onLoaded]);
 

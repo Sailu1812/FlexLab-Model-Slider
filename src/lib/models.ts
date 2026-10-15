@@ -1,5 +1,3 @@
-import { useGLTF } from '@react-three/drei';
-
 export interface ModelSpec {
   id: string;
   name: string;
@@ -14,7 +12,7 @@ export interface ModelSpec {
 
 /**
  * Registry of available 3D anatomical models.
- * Lightweight, optimized WebP models for fast Vercel streaming & mobile WebGL performance.
+ * Strictly on-demand loading: only the active model is loaded into memory.
  */
 export const MODELS: ModelSpec[] = [
   {
@@ -73,15 +71,3 @@ export const MODELS: ModelSpec[] = [
     anatomyFocus: 'Pelvic & Scapular Equilibrium',
   },
 ];
-
-/**
- * Preloads a specific model on-demand (e.g., when hovered or queued)
- */
-export const preloadModel = (path: string) => {
-  if (typeof window === 'undefined') return;
-  try {
-    useGLTF.preload(path);
-  } catch {
-    // Ignore preload error
-  }
-};
